@@ -1,0 +1,16 @@
+a	b	10
+a	c	10
+b	d	10
+b	c	10
+a	d	10
+w	x	10	
+w	y	10
+x	z	10
+y	z	10
+w	z	10
+a	w	-10
+b	x	-10
+c	y	-10
+d	z	-10
+a	y	-10
+b	z	-10

@@ -1,0 +1,9 @@
+*.swp
+output
+dist
+MANIFEST
+*.pyc
+data/chrombio.csv
+docs/
+data/raw/
+build
