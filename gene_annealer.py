@@ -4,7 +4,7 @@ import random
 from simanneal import Annealer
 import gene_inter
 from itertools import combinations, product
-
+import csv
 
 def interweight((A, B)):
     '''
@@ -32,30 +32,78 @@ def interweight((A, B)):
     iweight = (within - between) / float(len(A) + len(B))
 
     return iweight
-#
-# State is a [bpms], where a bpm is 
+
+# State is (energy,[bpms]), where a bpm is 
 #    ([nodes in module1], [nodes in module 2]) 
-#
-#
-#
-#
-#
-#
-#
 
 def randomBool():
     return bool(random.getrandbits(1))
+
+def pop_random_gene(bpm):
+    (module_1, module_2) = bpm
+    if(randomBool() and len(module_1)!= 0 or not module_2):
+        return module_1.pop(random.randrange(len(module_1)))
+    elif(len(module_2) != 0):
+        return module_2.pop(random.randrange(len(module_2)))
+    else:
+        print(bpm)
+        raise NameError('poping gene from empty bpm')
+
+def add_random_gene(gene, bpm):
+    (module_1, module_2) = bpm
+    if(randomBool()):
+        module_1.append(gene)
+    else:
+        module_2.append(gene)
+
+def is_bpm_empty((module_1, module_2)):
+    return (not module_1 and not module_2)
 
 
 class GeneAnnealer(Annealer):    
     # pass extra data (the distance matrix) into the constructor
     def __init__(self, state):
         #print(state)
-        super(GeneAnnealer, self).__init__(state)  # important! 
+        (energy,bpms) = state
+        bpms = filter(lambda x: not is_bpm_empty(x), bpms)
+        super(GeneAnnealer, self).__init__((energy, bpms))  # important! 
+        
 
     def move(self):
+        (energy, bpms) = self.state
+        # print(len(bpms))
+        
+        source_index = random.randrange(len(bpms)) 
+        source_bpm = bpms[source_index]
+        source_energy = interweight(source_bpm)
+        source_gene = pop_random_gene(source_bpm)
+
+        target_index = random.randrange(len(bpms) + 1)
+        if target_index == len(bpms):
+        	bpms.append(([], []))
+
+        target_bpm = bpms[target_index]
+        target_energy = interweight(target_bpm)
+
+        add_random_gene(source_gene, target_bpm)
+        
+        if(is_bpm_empty(source_bpm)):
+            del bpms[source_index]
+        
+        source_energy_new = interweight(source_bpm)
+        target_energy_new = interweight(target_bpm)
+        energy = (energy - target_energy_new - source_energy_new  
+                         + target_energy + source_energy)
+        
+        self.state = (energy, bpms) 
+
+
+    
+    def move2(self):
         # remove a gene from a random bpm. 
         gene_to_move = None
+        from_bpm = None
+
         while not gene_to_move:
             from_bpm = self.state[1][random.randint(0, len(self.state[1]) - 1)]
             energy_from_old = interweight(from_bpm)
@@ -96,21 +144,21 @@ def partition_set(set, num_partitions):
 
     for elem in set:
         partitions[random.randrange(num_partitions)].append(elem)
-    print(partitions)
+    #print(partitions)
     return partitions
 
 # partitions is list of lists
-#[[a, b, c], [e, f, g], [x, y, z], [n, m, o]] -> [([a, b, c], [e, f, g]), ([x, y, z], [n, m, o])]
 def pair_groups(partitions):
     (first, second) = split_list(partitions)
     return zip(first, second)
 
 
-NUM_BPMS = 30
+NUM_BPMS = 60
 
 
 if __name__ == '__main__':
-    gene_inter.load_genes("data/transcription.gi")
+    out_fname = "output.bmps"
+    gene_inter.load_genes("data/yeast_emap.gi")
 #    gene_inter.load_genes("data/8_elem_test.gi")
     
     #print(gene_inter.gis)
@@ -125,7 +173,14 @@ if __name__ == '__main__':
 
     print(state)
 
-
+    (energy, bpms) = state
+    print(bpms)
+    outf = open(out_fname, 'w+')
+    out = csv.writer(outf, delimiter='\t')
+    for i, (mod1, mod2) in enumerate(bpms):
+        mod1, mod2 = list(mod1), list(mod2)
+        out.writerow(['BPM%d/Module1' % i] + mod1)
+        out.writerow(['BPM%d/Module2' % i] + mod2)
     # # initial state, a randomly-ordered itinerary
     # init_state = list(cities.keys())
     # random.shuffle(init_state)

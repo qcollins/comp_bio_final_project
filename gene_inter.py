@@ -99,8 +99,3 @@ def gi(g1, g2):
     '''
     return gis[(g1, g2)]
 
-
-
-load_genes("data/8_elem_test.gi")
-
-print genecount()
