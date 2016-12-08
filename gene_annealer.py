@@ -99,34 +99,7 @@ class GeneAnnealer(Annealer):
 
 
     
-    def move2(self):
-        # remove a gene from a random bpm. 
-        gene_to_move = None
-        from_bpm = None
-
-        while not gene_to_move:
-            from_bpm = self.state[1][random.randint(0, len(self.state[1]) - 1)]
-            energy_from_old = interweight(from_bpm)
-            (from_module_1, from_module_2) = from_bpm
-            if randomBool() and len(from_module_1) != 0:
-                gene_to_move = from_module_1.pop(random.randrange(len(from_module_1)))
-            elif len(from_module_2) != 0:
-                gene_to_move = from_module_2.pop(random.randrange(len(from_module_2)))
-            energy_from_new = interweight(from_bpm)
-
-        # randomly move a gene from one bpm to another
-        target_bpm   = self.state[1][random.randint(0, len(self.state[1]) - 1)]
-        energy_target_old = interweight(target_bpm)
-        (target_module_1, target_module_2) = target_bpm
-        if randomBool():
-            target_module_1.append(gene_to_move)
-        else:
-            target_module_2.append(gene_to_move)
-        energy_target_new = interweight(target_bpm)
-
-        (energy, bpms) = self.state
-        energy = energy - energy_target_new - energy_from_new + energy_target_old + energy_from_old
-        self.state = (energy, bpms) 
+    
 
     def energy(self):
         return self.state[0]
@@ -158,7 +131,7 @@ NUM_BPMS = 60
 
 if __name__ == '__main__':
     out_fname = "output.bmps"
-    gene_inter.load_genes("data/yeast_emap.gi")
+    gene_inter.load_genes("data/transcription.gi")
 #    gene_inter.load_genes("data/8_elem_test.gi")
     
     #print(gene_inter.gis)
