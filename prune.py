@@ -26,18 +26,18 @@ def prune(bpms):
     bpms = filter(lambda (A, B): satisfy_min_max(A, B), bpms)
     return bpms
     # If pruning is disabled, exit now.
-    # if not conf.pruning:
-    #     return bpms
+    if not conf.pruning:
+        return bpms
 
-    # withI = parallel.pmap(interweight, bpms)
-    # withI = sorted(withI, key=lambda (iw, (A, B)): iw, reverse=True)
+    withI = parallel.pmap(interweight, bpms)
+    withI = sorted(withI, key=lambda (iw, (A, B)): iw, reverse=True)
 
-    # pruned = []
-    # for iw, (A, B) in withI:
-    #     jind = partial(jaccard_index, A.union(B))
-    #     if all(map(lambda ji: ji < conf.jaccard,
-    #                [jind(S1.union(S2)) for S1, S2 in pruned])):
-    #         pruned.append((A, B))
+    pruned = []
+    for iw, (A, B) in withI:
+        jind = partial(jaccard_index, A.union(B))
+        if all(map(lambda ji: ji < conf.jaccard,
+                   [jind(S1.union(S2)) for S1, S2 in pruned])):
+            pruned.append((A, B))
     
     return pruned
 
