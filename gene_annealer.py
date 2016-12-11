@@ -145,7 +145,7 @@ NUM_BPMS = 60
 
 if __name__ == '__main__':
     out_fname = "out.bpm" #"results/yeast_raw_unfiltered.bmps"
-    gene_inter.load_genes("data/yeast_emap.gi")
+    gene_inter.load_genes("data/yeast_emap.gi", ignore_file="data/essentials")
     #gene_inter.load_genes("data/8_elem_test.gi")
     
     #print(gene_inter.gis)
