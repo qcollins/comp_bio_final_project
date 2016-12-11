@@ -5,6 +5,14 @@ from simanneal import Annealer
 import gene_inter
 from itertools import combinations, product
 import csv
+import prune
+
+def normpdf(x, mean, sd):
+    var = float(sd)**2
+    pi = 3.1415926
+    denom = (2*pi*var)**.5
+    num = math.exp(-(float(x)-float(mean))**2/(2*var))
+    return num/denom
 
 def interweight((A, B)):
     '''
@@ -32,6 +40,12 @@ def interweight((A, B)):
     iweight = (within - between) / float(len(A) + len(B))
 
     return iweight
+
+
+
+def bpm_energy((A, B)):
+
+    return interweight((A, B)) * normpdf(len(A) + len(B), 15, 5)
 
 # State is (energy,[bpms]), where a bpm is 
 #    ([nodes in module1], [nodes in module 2]) 
@@ -75,7 +89,7 @@ class GeneAnnealer(Annealer):
         
         source_index = random.randrange(len(bpms)) 
         source_bpm = bpms[source_index]
-        source_energy = interweight(source_bpm)
+        source_energy = bpm_energy(source_bpm)
         source_gene = pop_random_gene(source_bpm)
 
         target_index = random.randrange(len(bpms) + 1)
@@ -83,15 +97,15 @@ class GeneAnnealer(Annealer):
         	bpms.append(([], []))
 
         target_bpm = bpms[target_index]
-        target_energy = interweight(target_bpm)
+        target_energy = bpm_energy(target_bpm)
 
         add_random_gene(source_gene, target_bpm)
         
         if(is_bpm_empty(source_bpm)):
             del bpms[source_index]
         
-        source_energy_new = interweight(source_bpm)
-        target_energy_new = interweight(target_bpm)
+        source_energy_new = bpm_energy(source_bpm)
+        target_energy_new = bpm_energy(target_bpm)
         energy = (energy - target_energy_new - source_energy_new  
                          + target_energy + source_energy)
         
@@ -130,9 +144,9 @@ NUM_BPMS = 60
 
 
 if __name__ == '__main__':
-    out_fname = "output.bmps"
-    gene_inter.load_genes("data/transcription.gi")
-#    gene_inter.load_genes("data/8_elem_test.gi")
+    out_fname = "out.bpm" #"results/yeast_raw_unfiltered.bmps"
+    gene_inter.load_genes("data/yeast_emap.gi")
+    #gene_inter.load_genes("data/8_elem_test.gi")
     
     #print(gene_inter.gis)
     #print(gene_inter.genes)   
@@ -147,6 +161,10 @@ if __name__ == '__main__':
     print(state)
 
     (energy, bpms) = state
+
+    # now prune bpms
+    #bpms = prune.prune(bpms)
+
     print(bpms)
     outf = open(out_fname, 'w+')
     out = csv.writer(outf, delimiter='\t')
@@ -154,26 +172,3 @@ if __name__ == '__main__':
         mod1, mod2 = list(mod1), list(mod2)
         out.writerow(['BPM%d/Module1' % i] + mod1)
         out.writerow(['BPM%d/Module2' % i] + mod2)
-    # # initial state, a randomly-ordered itinerary
-    # init_state = list(cities.keys())
-    # random.shuffle(init_state)
-
-    # # create a distance matrix
-    # distance_matrix = {}
-    # for ka, va in cities.items():
-    #     distance_matrix[ka] = {}
-    #     for kb, vb in cities.items():
-    #         if kb == ka:
-    #             distance_matrix[ka][kb] = 0.0
-    #         else:
-    #             distance_matrix[ka][kb] = distance(va, vb)
-
-    # tsp = TravellingSalesmanProblem(init_state, distance_matrix)
-    # # since our state is just a list, slice is the fastest way to copy
-
-    # while state[0] != 'New York City':
-    #     state = state[1:] + state[:1]  # rotate NYC to start
-    # print("%i mile route:" % e)
-    # for city in state:
-    #     print("\t", city)
-

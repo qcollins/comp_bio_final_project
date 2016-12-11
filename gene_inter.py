@@ -18,7 +18,7 @@ genes = set()
 genespace = set() # slightly bigger---include all EMAP genes
 numgenes = 0
 
-def load_genes(geneinter_file=None, ignore_file=None, squaring=True):
+def load_genes(geneinter_file=None, ignore_file="data/essentials", squaring=True):
     '''
     Loads all of the gene pairs and their corresponding interaction scores
     into memory. It also keeps a set of all genes for iterative purposes.
