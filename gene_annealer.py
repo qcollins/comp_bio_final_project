@@ -85,7 +85,7 @@ def scaled_interweight((A, B)):
 def bpm_energy((A, B)):
     #return scaled_interweight((A, B))
     #print(len(A) + len(B))
-    w = interweight((A, B))
+    w = interweight((A, B)) * normpdf(len(A) + len(B), 30, 5)
     return  -w #if w < 0 else w * normpdf(len(A) + len(B), 15, 5)
 
 # State is (energy,[bpms]), where a bpm is 
@@ -126,43 +126,56 @@ class GeneAnnealer(Annealer):
 
     def move(self):
         (energy, bpms) = self.state
-        # print(len(bpms))
         
         source_index = random.randrange(len(bpms)) 
         source_bpm = bpms[source_index]
-
-        target_index = random.randrange(len(bpms) + 1)
-        if target_index == len(bpms):
-            bpms.append(([], []))
-
-        target_bpm = bpms[target_index]
-
-        source_energy = bpm_energy(source_bpm)
-        target_energy = bpm_energy(target_bpm)
-
-
-        source_gene = pop_random_gene(source_bpm)
-        add_random_gene(source_gene, target_bpm)
-        
-        source_energy_new = None
-        if(is_bpm_empty(source_bpm)):
-            del bpms[source_index]
-            source_energy_new = 0
-        else:
+        (a,b) = source_bpm
+        if(len(a) > 25 or len(b) > 25):
+            init_energy = bpm_energy(source_bpm)
+            a_new = a[len(a)/2:]
+            b_new = b[len(b)/2:]
+            
+            del a[len(a)/2:]
+            del b[len(b)/2:]
             source_energy_new = bpm_energy(source_bpm)
-        target_energy_new = bpm_energy(target_bpm)
-        energy_old = energy
-
-        if target_index == source_index:
-            energy = energy + target_energy_new - target_energy
+            bpm_new = (a_new, b_new)
+            bpm_new_energy = bpm_energy(bpm_new)
+            bpms.append(bpm_new)
+            energy = energy + bpm_new_energy + source_energy_new - init_energy
+            self.state = (energy, bpms)
         else:
-            energy = (energy + target_energy_new + source_energy_new  
-                         - target_energy - source_energy)
-        
-        # print "---------------------------------------"
-        # print energy_old, energy, target_energy_new, source_energy_new, target_energy, source_energy
-        # print "actual ", sum(map(bpm_energy, self.state[1])), "real ", energy, "state", self.state[1]
-        self.state = (energy, bpms) 
+            target_index = random.randrange(len(bpms) + 1)
+            if target_index == len(bpms):
+                bpms.append(([], []))
+
+            target_bpm = bpms[target_index]
+
+            source_energy = bpm_energy(source_bpm)
+            target_energy = bpm_energy(target_bpm)
+
+
+            source_gene = pop_random_gene(source_bpm)
+            add_random_gene(source_gene, target_bpm)
+            
+            source_energy_new = None
+            if(is_bpm_empty(source_bpm)):
+                del bpms[source_index]
+                source_energy_new = 0
+            else:
+                source_energy_new = bpm_energy(source_bpm)
+            target_energy_new = bpm_energy(target_bpm)
+            energy_old = energy
+
+            if target_index == source_index:
+                energy = energy + target_energy_new - target_energy
+            else:
+                energy = (energy + target_energy_new + source_energy_new  
+                             - target_energy - source_energy)
+            
+            # print "---------------------------------------"
+            # print energy_old, energy, target_energy_new, source_energy_new, target_energy, source_energy
+            # print "actual ", sum(map(bpm_energy, self.state[1])), "real ", energy, "state", self.state[1]
+            self.state = (energy, bpms) 
 
 
     
@@ -194,13 +207,13 @@ def pair_groups(partitions):
     return zip(first, second)
 
 
-NUM_BPMS = 60
+NUM_BPMS = 120
 
 
 if __name__ == '__main__':
     out_fname = "out.bpm"#"results/norm_not_pruned.bpm" #"results/yeast_raw_unfiltered.bmps"
-    #gene_inter.load_genes("data/yeast_emap.gi", ignore_file="data/essentials")
-    gene_inter.load_genes("data/8_elem_test.gi")
+    gene_inter.load_genes("data/yeast_emap.gi", ignore_file="data/essentials")
+    #gene_inter.load_genes("data/8_elem_test.gi")
     
     #print(gene_inter.gis)
     #print(gene_inter.genes)   
@@ -224,5 +237,6 @@ if __name__ == '__main__':
     out = csv.writer(outf, delimiter='\t')
     for i, (mod1, mod2) in enumerate(bpms):
         mod1, mod2 = list(mod1), list(mod2)
+        print("mod1: %d %d %d" %(len(mod1), len(mod2), bpm_energy((mod1, mod2))))
         out.writerow(['BPM%d/Module1' % i] + mod1)
         out.writerow(['BPM%d/Module2' % i] + mod2)
