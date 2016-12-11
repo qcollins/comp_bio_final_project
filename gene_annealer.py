@@ -1,4 +1,4 @@
-from __future__ import print_function
+#from __future__ import print_function
 import math
 import random
 from simanneal import Annealer
@@ -37,15 +37,56 @@ def interweight((A, B)):
     within = sum_within(A) + sum_within(B)
     between = sum(map(gitup, product(A, B)))
 
-    iweight = (within - between) / float(len(A) + len(B))
+
+    iweight = (within - between) #/ float(len(A) + len(B))
+
+    #print "A: ", A, "B ", B, "W: ", iweight, sum_within(A), sum_within(B), between
+    return iweight
+
+def scaled_interweight((A, B)):
+    '''
+    Calculates the interaction weight of a BPM. It is defined as the difference
+    of sums of interaction scores within each module and the sum of interaction
+    scores between each module divided by the number of genes in the entire BPM.
+
+    The value returned is a BPM "decorated" with the interaction weight for
+    sorting purposes. This roundabout means of decoration is used so that
+    parallelism can be used for calculating the interaction weights. (As
+    opposed to using a higher order function with 'sorted'.)
+    '''
+    gitup = lambda (g1, g2): gene_inter.gi(g1, g2)
+
+    product_ab = filter(lambda x: gitup(x) != 0, list(product(A, B)))
+    combo_a =    filter(lambda x: gitup(x) != 0, list(combinations(A, 2)))
+    combo_b =    filter(lambda x: gitup(x) != 0, list(combinations(B, 2)))
+
+
+
+    #print(len(product_ab), len(combo_a), len(combo_b))
+
+
+    if len(A) + len(B) == 0:
+        return 0
+    # For converting a tuple to two arguments
+
+    def sum_within(S):
+        return sum(map(gitup, combinations(S, 2)))
+
+    within = sum_within(A)/max(float(len(combo_a)), 1.0) + sum_within(B)/max(1.0, float(len(combo_b)))
+    between = sum(map(gitup, product(A, B))) / max(float(len(product_ab)), 1.0)
+
+    iweight = (within - between) #/ float(len(A) + len(B))
 
     return iweight
 
 
 
-def bpm_energy((A, B)):
 
-    return interweight((A, B)) * normpdf(len(A) + len(B), 15, 5)
+def bpm_energy((A, B)):
+    #return scaled_interweight((A, B))
+    #print(len(A) + len(B))
+    w = interweight((A, B))
+    return  -w #if w < 0 else w * normpdf(len(A) + len(B), 15, 5)
 
 # State is (energy,[bpms]), where a bpm is 
 #    ([nodes in module1], [nodes in module 2]) 
@@ -89,26 +130,38 @@ class GeneAnnealer(Annealer):
         
         source_index = random.randrange(len(bpms)) 
         source_bpm = bpms[source_index]
-        source_energy = bpm_energy(source_bpm)
-        source_gene = pop_random_gene(source_bpm)
 
         target_index = random.randrange(len(bpms) + 1)
         if target_index == len(bpms):
-        	bpms.append(([], []))
+            bpms.append(([], []))
 
         target_bpm = bpms[target_index]
+
+        source_energy = bpm_energy(source_bpm)
         target_energy = bpm_energy(target_bpm)
 
+
+        source_gene = pop_random_gene(source_bpm)
         add_random_gene(source_gene, target_bpm)
         
+        source_energy_new = None
         if(is_bpm_empty(source_bpm)):
             del bpms[source_index]
-        
-        source_energy_new = bpm_energy(source_bpm)
+            source_energy_new = 0
+        else:
+            source_energy_new = bpm_energy(source_bpm)
         target_energy_new = bpm_energy(target_bpm)
-        energy = (energy - target_energy_new - source_energy_new  
-                         + target_energy + source_energy)
+        energy_old = energy
+
+        if target_index == source_index:
+            energy = energy + target_energy_new - target_energy
+        else:
+            energy = (energy + target_energy_new + source_energy_new  
+                         - target_energy - source_energy)
         
+        # print "---------------------------------------"
+        # print energy_old, energy, target_energy_new, source_energy_new, target_energy, source_energy
+        # print "actual ", sum(map(bpm_energy, self.state[1])), "real ", energy, "state", self.state[1]
         self.state = (energy, bpms) 
 
 
@@ -117,7 +170,8 @@ class GeneAnnealer(Annealer):
 
     def energy(self):
         return self.state[0]
-        #return -sum(map(interweight, self.state))
+        #print sum(map(bpm_energy, self.state[1]))
+        #return sum(map(bpm_energy, self.state[1]))
 
 
 # TODO: loosing some genes in this process
@@ -144,16 +198,16 @@ NUM_BPMS = 60
 
 
 if __name__ == '__main__':
-    out_fname = "out.bpm" #"results/yeast_raw_unfiltered.bmps"
-    gene_inter.load_genes("data/yeast_emap.gi", ignore_file="data/essentials")
-    #gene_inter.load_genes("data/8_elem_test.gi")
+    out_fname = "out.bpm"#"results/norm_not_pruned.bpm" #"results/yeast_raw_unfiltered.bmps"
+    #gene_inter.load_genes("data/yeast_emap.gi", ignore_file="data/essentials")
+    gene_inter.load_genes("data/8_elem_test.gi")
     
     #print(gene_inter.gis)
     #print(gene_inter.genes)   
 
     initial_state = pair_groups(partition_set(gene_inter.genes, NUM_BPMS * 2)) 
     print(initial_state)
-    energy = -sum(map(interweight, initial_state))
+    energy = sum(map(bpm_energy, initial_state))
     annealer = GeneAnnealer((energy, initial_state))
     annealer.copy_strategy = "deepcopy"  
     state, e = annealer.anneal()
