@@ -30,8 +30,11 @@
 \newtheorem{lemma}[theorem]{Lemma}
 \newtheorem{corollary}[theorem]{Corollary}
 %\setlength{\parindent}{0cm}
-\title{ARGABLARG}
+\title{Identifying Pathway Modules from High Throughput Genetic Interaction Data using Simulated Annealing}
 \author{Jeremy Colebrook-Soucie, Quinn Collins}
+
+
+\newtheorem{definition}[theorem]{Definition}
 
 
 % NOTE! Affiliations placed here should be for the institution where the
@@ -47,7 +50,20 @@
 
 % Head 1
 
+\section{Abstract}
+
+
 \section{Introduction}
+\par In this paper, we explore an alternative method of detecting patterns from high throughput genetic interaction data. This work has been done as an extension of the genecentric package and the method defined in Leiserson \textit{et al}. The method that we explore simulated annealing. We also touch upon subsequent verification techniques.
+
+\par High throughput genetic interaction data can be represented as a weighted, undirected graph. Each dd
+
+\par The patterns that we attempted to detect are called BPMs, standing for between pathway model. These are defined by two sets of genes. Each set of genes should have predominantly positive edges within itself and predominantly negative edges with the other set. 
+
+
+High throughput genetic interaction 
+
+The recent rise of high throughput genetic interaction data 
 What problem are we trying to solve?
 What is it an extension of
 problem domain
@@ -57,18 +73,65 @@ talk about genecentric
 
 \section{Methods}
 \subsection{Simulated Annealing}
-overview of method
-cite the github link for SA wrapper
+\par Simulated annealing is a hueristic that is used for solving optimization problems with a very large sample space. Its function is analogous to the physical process of annealing, where a metal is heated and then slowly cooled in order to remove imperfections. When the metal is hot, the smith can safely make large changes to it. However, as it colder, he must work it more slowly into its final shape. 
 
-\subsection{Energy Function}
-what we do
-discussion of options considered?
-anecdotes about some problems
+\par Let us define the following terminology. 
 
-\subsection{Permutation Function}
-what we do
-discussion of options considered?
-anecdotes about some projects
+\begin{definition}
+{\bf Objective Function} The objective function is a function from an element in the sample space to the real numbers. Simulated annealing attempts to minimize this function.
+\end{definition}
+ 
+\begin{definition}
+{\bf Permutation} In the context of simulated annealing, a permutation is how one gets from one valid point in the sample space to another. In general, such permutations are simple, random changes in a solution. 
+\end{definition}
+
+
+\begin{definition}
+{\bf Temperature} The temperature of simulated annealing defines how willing it is to accept worse solutions. When temperature is high, simulated annealing has a large probability of accepting a solution that is worse than the previous candidate. However, when the temperature is low, simulated annealing will accept worse solutions with lower and lower probabilties. 
+\end{definition}
+
+\par Simulated annealing works by exploring the sample space, with the end goal of minimizing the objective function of the final solution. It begins with a very high temperature, which exponentially decays over a fixed number of total iterations. At every iteration, it generates a new solution based on the previous solution. It then  evaluates this new solution and then decides whether or not to accept it based on how it compares to the previous solution and the current temperature.
+
+\par Thus, in order to apply simulated annealing to the problem domain of extracting BPMs from a genetic interaction network, we must define the sample space, and how to both permuate and evaluate a point in the sample space. 
+
+
+
+\subsection{Sample Space}
+\par We defined the sample space as a partition of the nodes in the genetic interation network. Each partition represents a single BPM. Each BPM is in turn divided into two modules.
+
+\par This is a notable divergence from the work of Leiserson \textit{et al}. In this work, genes are allowed to be placed in multiple BPM's at once. We opted not to include this feature because we believed it would have greatly excessively expanded the sample space and would have exacerabated some on the problems inherent to our approach. An unfortunate of this is that it made comparing our work to previous work a little bit harder. 
+
+
+\subsection{Objective Function}
+We defined our objective to be the sum of a BPM objective function times a scaling factor across all BPMs. 
+
+Define this BPM function as:
+\begin{align}
+Bpm Obj(x) = \sum_{a \in M_x}^{}  \sum_{b \in M_x}^{} e_{a, b}  
+		   + \sum_{a \in N_x}^{}  \sum_{b \in N_x}^{} e_{a, b}  
+		   - \sum_{a \in M_x}^{}  \sum_{b \in N_x}^{} e_{a, b}              
+\end{align}
+
+$M_x$ and $N_x$ are the two submodules defining BPM x. $e_{a, b}$ is the weight of the edge between a and b. If an edge does not exist, then it is 0.
+
+Define the scaling factor as:
+$$scale(i) = \frac{e^{-\frac{(i - \mu) ^2}{2*\sigma^2}}}{\sqrt{2 * \pi} * \sigma}$$
+We experimented with multiple $\sigma$ and  $\mu$ values, but eventually settled on $\mu = 30$ and $\sigma = 5$. 
+
+Finally, define our objective function as:
+$$obj(Bpms) = \sum_{x \in Bpms}{} Bpm Obj(x) * scale(|M_x| + |N_X|) $$
+
+\par We chose the normal distribution as the scaling factor because it is an easily understandable and modifiable bell curve. Such a scaling factor was necessary because all the other objective functions that we tried led to the creation of many modules with a size less than 3 or greater than 25, which were subsequently discarded when pruning results.
+
+\par We completely recognize that using a scaling factor may have caused some problems. We will address these in the discussion section.
+
+
+\subsection{Permutation Behavior}
+\par The procedure for permuting a set of BPMs is as follows.
+ 
+\par Begin by selecting a random BPM. If that BPM has a module that has a size greater than 25, perform a split. That is, split both modules in have and create two new BPMs created from these two splits. Remove the original BPM.
+
+\par Otherwise, randomly pick one of the two modules and remove a random gene from that module. If removing this gene empties the BPM (as in, both modules are empty), delete the BPM. Next, pick another random BPM and a random module from within it. Add this gene to that module. 
 
 \section{Convergence}
 How we converge
@@ -80,6 +143,20 @@ Is this ia good metric? Still need to decide
 
 
 \section{Comparison to Genecentric}
+
+\begin{center}
+\begin{tabular}{ |c | c c| c | } 
+ \hline
+ Method & Modules Found & Modules Enriched & BPMs Enriched for Same Function \\
+	\hline
+ cell4 & cell5 & cell6 & 43\\ 
+	\hline 
+ cell7 & cell8 & cell9 & 342\\ 
+ \hline
+\end{tabular}
+\end{center}
+
+
 Table for modules found/enriched
 Discussion on why its good or bad
 Problems with comparing to genecentric
