@@ -29,6 +29,8 @@
 \newtheorem{theorem}{Theorem}
 \newtheorem{lemma}[theorem]{Lemma}
 \newtheorem{corollary}[theorem]{Corollary}
+\usepackage{graphicx}
+\graphicspath{ {./} }
 %\setlength{\parindent}{0cm}
 \title{Identifying Pathway Modules from High Throughput Genetic Interaction Data using Simulated Annealing}
 \author{Jeremy Colebrook-Soucie, Quinn Collins}
@@ -54,23 +56,18 @@
 
 
 \section{Introduction}
-\par In this paper, we explore an alternative method of detecting patterns from high throughput genetic interaction data. This work has been done as an extension of the genecentric package and the method defined in Leiserson \textit{et al}. The method that we explore simulated annealing. We also touch upon subsequent verification techniques.
 
-\par High throughput genetic interaction data can be represented as a weighted, undirected graph. Each dd
+\par In this paper, we explore simulated annealing as an alternative method for detecting patterns from high throughput genetic interaction data. This work has been done as an extension of the genecentric package and the LocalCut method defined in Leiserson \textit{et al}. We also touch upon subsequent verification techniques.
 
-\par The patterns that we attempted to detect are called BPMs, standing for between pathway model. These are defined by two sets of genes. Each set of genes should have predominantly positive edges within itself and predominantly negative edges with the other set. 
+\par High throughput genetic interaction data can be represented as a weighted, undirected graph, in which each vertex represents a gene and each edge represents how positive or negative the genetic interaction between the two genes is. Thus, we can identify genes that belong in the same pathway because the genes are likely to have positive genetic interactions with one another. We can also identify genes that belong in a related pathway, because the genes in one pathway will have many negative genetic interactions with another related pathway. Thus, we can model finding related genetic pathways as a graphing problem. 
 
+\par We represent related genetic pathways as BPMs (between pathway models), which are each composed of two modules of genes. Each module represents a possible gene pathway, and each BPM represents 2 possible related gene pathways. Thus, we aim to maximize the positive edge weights in each module, and negative edge weights between modules in the same BPM. 
 
-High throughput genetic interaction 
+\par We apply simulated annealing to high throughput genetic interaction data to generate possible BPMs. Applying simulated annealing allows us to generate "bad" BPMs early on, that might not have strong positive interactions within each module and strong negative interactions between modules, in order to explore the sample space. As the process continues, we gradually move towards better BPMs until we find a set of BPMs that have weights within and between modules that we consider "good". Thus, simulated annealing allows us to explore a large possible sample space and come up with a probable solution. 
 
-The recent rise of high throughput genetic interaction data 
-What problem are we trying to solve?
-What is it an extension of
-problem domain
-talk about genecentric
 \section{Data}
 
-
+The data that we examined and performed our analysis on was created by Tufts' Bioinformatics and Computational Biology Research Group. This dataset was based on Collins \textit{et al.}'s genetic interaction map on protein complexes involved in yeast chromosome biology from the Krogan Lab Interactome Database[Collins 2007]. The format of this dataset was consistent with that required for the genecentric package that was used[Leiserson 2011, Gallant 2013]. 
 \section{Methods}
 \subsection{Simulated Annealing}
 \par Simulated annealing is a hueristic that is used for solving optimization problems with a very large sample space. Its function is analogous to the physical process of annealing, where a metal is heated and then slowly cooled in order to remove imperfections. When the metal is hot, the smith can safely make large changes to it. However, as it colder, he must work it more slowly into its final shape. 
@@ -134,13 +131,9 @@ $$obj(Bpms) = \sum_{x \in Bpms}{} Bpm Obj(x) * scale(|M_x| + |N_X|) $$
 \par Otherwise, randomly pick one of the two modules and remove a random gene from that module. If removing this gene empties the BPM (as in, both modules are empty), delete the BPM. Next, pick another random BPM and a random module from within it. Add this gene to that module. 
 
 \section{Convergence}
-How we converge
-How genecentric converges
-Quinns pretty graph
-Wow we're bad probably
-Is this ia good metric? Still need to decide
+To determine how consistent the BPM modules we generated were, we ran our simulated annealing algorithm 100 times, and recorded how often each gene appeared in the same module as each other gene. We then compared these results to a Monte Carlo simulation. To generate the Monte Carlo simulation data, we assigned a number to each gene in our dataset and randomly partitioned the set of gene placeholder numbers into partitions of size 15. We then counted how often each placeholder number appeared in the same module as each other placeholder number. We would expect that if the BPM modules were consistent, then genes would often either appear in the same module as other genes 0 times, or many times. We found, however, that the consistency of our BPMs nearly matched that of the Monte Carlo simulation data. We then recorded the consistency of BPM modules generated by Genecentric using the LocalCut algorithm. We found that Genecentric with LocalCut had a far different distribution, with far more genes that never appear in the same module as other genes, and far more genes that appear often with other genes. The results for Genecentric/LocalCut are not pictured in the graph below because the algorithm allows for each gene to appear multiple times in the final collection of BPMS, which put the consistency results on a different order of magnitude. Thus, because the consistency of BMP modules created by our simulated annealing algorithm closely matched that created by the Monte Carlo simulation, and were distributed differently than that of the Genecentric/LocalCut algorithm, we can conclude that our BPM modules were not consistent. 
 
-
+\includegraphics[scale=0.8]{convergence.png}
 
 \section{Comparison to Genecentric}
 %jeremy@mint2 ~/Documents/comp150bg/comp_bio_final_project $ python count_enrichment_dir.py 100_random_enrich/
@@ -175,11 +168,16 @@ Is this ia good metric? Still need to decide
 
 
 \section{Discussion}
-Postmordem about why SA bad in this domain
+Postmortem about why SA bad in this domain
 
 
 
+\section{References}
+Collins S. Miller K. Maas N., et al. Functional dissection of protein complexes involved in yeast chromosome biology using a genetic interaction map. Nature. 2007;446:806–810.\\
 
+M. Leiserson, D. Tatar, L. Cowen and B. Hescott, "Inferring Mechanisms of Compensation from E-MAP and SGA Data Using Local Search Algorithms for Max Cut," Recomb 2011, pp. 154-167.\\
+
+Gallant, Leiserson, Kackalov, Cowen and Hescott, "Genecentric: A package to uncover graph-theoretic structure in high-throughput epistasis data." BMC Bioinformatics in press, 2013.\\
 
 
 
