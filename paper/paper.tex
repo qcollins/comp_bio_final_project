@@ -143,23 +143,35 @@ Is this ia good metric? Still need to decide
 
 
 \section{Comparison to Genecentric}
+%jeremy@mint2 ~/Documents/comp150bg/comp_bio_final_project $ python count_enrichment_dir.py 100_random_enrich/
+%0.647129186603 0.0370813397129 28.4736842105, 44
+%jeremy@mint2 ~/Documents/comp150bg/comp_bio_final_project $ python count_enrichment_dir.py 100_enrich/
+%0.597336658156 0.0313344465786 27.0727272727, 45.6
+%jeremy@mint2 ~/Documents/comp150bg/comp_bio_final_project $ python count_enrichments.py %../genecentric/results/yeast_filtered.gobpm 
+%(0.9393939393939394, 0.4090909090909091, 62.0, 66)
 
+\par It is not entirely clear how compare genecentric to simulated annealing. This is because genecentric allows for genes to be in mulitple modules, obviously results in more, higher quality modules than simulated annealing. Ultimately, we decided to lean on percent of BPMs enriched and percent of BPMs enriched for same function to standardize these measurements. 
+
+\par This line of thought led us to the conclusion that we would need a random group, where BPMs were randomly generated, to compare our results to. Each random group contained about 22 BPMs where each module contained 15 random genes. The average over many random trials would form a baseline. In the end, we took the average over FIXME FIXME FIXME.
+
+\par Additionally, to correct for the apparent lack of convergence in the simulated annealing method, we took the average results over 55 trials.
+
+\par In order to compare these different methods, we examined several different benchmarks. Modules found is the number of modules found between size 3 and 25. Modules enriched is the number of modules enriched for at least one GO term at consider  $p \leq 0.05 $. BPMs Enriched for Same Function is the number of BPMs where both modules had at least one shared GO term.
 \begin{center}
-\begin{tabular}{ |c | c c| c | } 
+\begin{tabular}{ |c | c |c| c | } 
  \hline
  Method & Modules Found & Modules Enriched & BPMs Enriched for Same Function \\
 	\hline
- cell4 & cell5 & cell6 & 43\\ 
+ Genecentric              & 66 & 62 (94\%) & 27 (41\%)\\ 
 	\hline 
- cell7 & cell8 & cell9 & 342\\ 
+ Simulated Anneal Average & 45.6 & 27.1 (59.7\%) & 1.4 (0.031\%)\\ 
+ \hline
+ Random Partition Average & 44.0 & 26.47 (64.7\%) & 1.5 (0.037\%)\\ 
  \hline
 \end{tabular}
 \end{center}
+\par This data is particuarly telling. As anticipated, genecentric performed very well. Consequently, our method certainly did not, performing at the same level as completely random selection. This will be explored further in the discussion section.
 
-
-Table for modules found/enriched
-Discussion on why its good or bad
-Problems with comparing to genecentric
 
 
 \section{Discussion}
